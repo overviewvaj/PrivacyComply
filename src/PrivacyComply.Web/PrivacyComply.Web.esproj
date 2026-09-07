@@ -12,7 +12,6 @@
     <None Include=".vs\launch.json" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="src\app\routes\" />
     <Folder Include="src\features\" />
     <Folder Include="src\services\" />
     <Folder Include="src\styles\" />
