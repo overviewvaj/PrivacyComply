@@ -60,17 +60,30 @@
 }
 
 .app-layout__navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     padding: 24px 16px;
 }
 
-.app-layout__navigation-placeholder {
+.app-layout__navigation-link {
     display: block;
     padding: 10px 12px;
     border-radius: 8px;
-    background: #f1f5f9;
     font-size: 14px;
     font-weight: 600;
     color: #475569;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+    .app-layout__navigation-link:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+.app-layout__navigation-link--active {
+    background: #f1f5f9;
+    color: #0f172a;
 }
 
 .app-layout__main {

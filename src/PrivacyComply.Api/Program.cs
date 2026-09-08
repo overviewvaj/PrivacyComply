@@ -142,6 +142,29 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // ------------------------------------------------------------
+// CORS
+// ------------------------------------------------------------
+
+// Allows the local React/Vite development frontend to call
+// the PrivacyComply API from its separate development origin.
+//
+// This policy is deliberately restricted to the known frontend
+// origin rather than allowing arbitrary origins.
+//
+// The policy is being registered here only. It will be added to
+// the HTTP request pipeline separately.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentFrontend", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+// ------------------------------------------------------------
 // OpenAPI
 // ------------------------------------------------------------
 
@@ -159,6 +182,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevelopmentFrontend");
+}
 
 // Establish correlation first so every downstream component,
 // including exception handling and logging, can use it.
@@ -193,7 +221,6 @@ app.MapGet("/", () =>
         environment = app.Environment.EnvironmentName
     });
 });
-
 
 app.MapRetentionEndpoints();
 

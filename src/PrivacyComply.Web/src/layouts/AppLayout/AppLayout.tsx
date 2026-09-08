@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
+import { navigationItems } from '../../app/navigation/navigationItems'
 import './AppLayout.css'
 
 function AppLayout() {
@@ -23,9 +24,19 @@ function AppLayout() {
                         className="app-layout__navigation"
                         aria-label="Primary navigation"
                     >
-                        <span className="app-layout__navigation-placeholder">
-                            Navigation
-                        </span>
+                        {navigationItems.map((item) => (
+                            <NavLink
+                                key={item.id}
+                                to={item.path}
+                                className={({ isActive }) =>
+                                    isActive
+                                        ? 'app-layout__navigation-link app-layout__navigation-link--active'
+                                        : 'app-layout__navigation-link'
+                                }
+                            >
+                                {item.label}
+                            </NavLink>
+                        ))}
                     </nav>
                 </aside>
 

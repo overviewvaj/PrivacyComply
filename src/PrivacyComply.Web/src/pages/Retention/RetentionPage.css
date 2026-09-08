@@ -1,0 +1,128 @@
+.retention-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.retention-page__header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.retention-page__eyebrow {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.retention-page__title {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.retention-page__description {
+    max-width: 760px;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #475569;
+}
+
+.retention-page__panel {
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.retention-page__panel-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.retention-page__panel-description {
+    margin: 8px 0 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+.retention-page__policy-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.retention-page__policy-card {
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.retention-page__policy-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.retention-page__policy-code {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.retention-page__policy-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.retention-page__policy-detail {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 13px;
+    line-height: 1;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.retention-page__policy-status {
+    font-weight: 700;
+    color: #166534;
+}
+
+.retention-page__coverage-status {
+    font-weight: 700;
+    color: #166534;
+}
+
+.retention-page__error {
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #991b1b;
+}
