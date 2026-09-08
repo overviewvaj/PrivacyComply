@@ -1,21 +1,41 @@
 import { createBrowserRouter } from 'react-router-dom'
+
+import ProtectedRoute from '../../auth/ProtectedRoute'
+import OrganisationRouteGuard from '../../auth/OrganisationRouteGuard'
+
 import AppLayout from '../../layouts/AppLayout/AppLayout'
+
 import DashboardPage from '../../pages/Dashboard/DashboardPage'
 import RetentionPage from '../../pages/Retention/RetentionPage'
+import SignInPage from '../../pages/SignIn/SignInPage'
 import NotFoundPage from '../../pages/NotFound/NotFoundPage'
 
 const router = createBrowserRouter([
     {
-        path: '/',
-        element: <AppLayout />,
+        path: '/sign-in',
+        element: <SignInPage />,
+    },
+    {
+        element: <ProtectedRoute />,
         children: [
             {
-                index: true,
-                element: <DashboardPage />,
-            },
-            {
-                path: 'retention',
-                element: <RetentionPage />,
+                path: '/:organisationSlug',
+                element: <OrganisationRouteGuard />,
+                children: [
+                    {
+                        element: <AppLayout />,
+                        children: [
+                            {
+                                path: 'dashboard',
+                                element: <DashboardPage />,
+                            },
+                            {
+                                path: 'retention',
+                                element: <RetentionPage />,
+                            },
+                        ],
+                    },
+                ],
             },
         ],
     },

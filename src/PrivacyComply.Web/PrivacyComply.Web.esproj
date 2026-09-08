@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\features\" />
+    <Folder Include="src\pages\SignIn\" />
     <Folder Include="src\styles\" />
     <Folder Include="src\components\" />
   </ItemGroup>

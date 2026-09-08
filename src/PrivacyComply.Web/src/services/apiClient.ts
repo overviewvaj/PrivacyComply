@@ -29,7 +29,8 @@ async function throwApiError(
     let errorResponse: ApiErrorResponse | null = null
 
     try {
-        errorResponse = (await response.json()) as ApiErrorResponse
+        errorResponse =
+            (await response.json()) as ApiErrorResponse
     } catch {
         errorResponse = null
     }
@@ -48,6 +49,7 @@ export async function getJson<T>(
     const response = await fetch(`${apiBaseUrl}${path}`, {
         method: 'GET',
         headers: defaultHeaders,
+        credentials: 'include',
     })
 
     if (!response.ok) {
@@ -58,4 +60,36 @@ export async function getJson<T>(
     }
 
     return response.json() as Promise<T>
+}
+
+export async function postJson<TRequest, TResponse>(
+    path: string,
+    body: TRequest,
+    fallbackMessage: string,
+): Promise<TResponse> {
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+        method: 'POST',
+        headers: {
+            ...defaultHeaders,
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+        return throwApiError(
+            response,
+            `${fallbackMessage} HTTP status: ${response.status}`,
+        )
+    }
+
+    // Some command-style API endpoints intentionally return
+    // HTTP 204 No Content. In that case there is no response
+    // body to deserialize.
+    if (response.status === 204) {
+        return undefined as TResponse
+    }
+
+    return response.json() as Promise<TResponse>
 }
