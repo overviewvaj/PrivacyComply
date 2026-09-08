@@ -1,11 +1,7 @@
-import type { ReactNode } from 'react'
+import { Outlet } from 'react-router-dom'
 import './AppLayout.css'
 
-type AppLayoutProps = {
-    children: ReactNode
-}
-
-function AppLayout({ children }: AppLayoutProps) {
+function AppLayout() {
     return (
         <div className="app-layout">
             <header className="app-layout__header">
@@ -35,7 +31,7 @@ function AppLayout({ children }: AppLayoutProps) {
 
                 <main className="app-layout__main">
                     <div className="app-layout__content">
-                        {children}
+                        <Outlet />
                     </div>
                 </main>
             </div>

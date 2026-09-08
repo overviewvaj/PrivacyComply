@@ -6,11 +6,13 @@ import NotFoundPage from '../../pages/NotFound/NotFoundPage'
 const router = createBrowserRouter([
     {
         path: '/',
-        element: (
-            <AppLayout>
-                <DashboardPage />
-            </AppLayout>
-        ),
+        element: <AppLayout />,
+        children: [
+            {
+                index: true,
+                element: <DashboardPage />,
+            },
+        ],
     },
     {
         path: '*',
