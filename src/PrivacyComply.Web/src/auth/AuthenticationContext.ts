@@ -19,7 +19,7 @@ export interface AuthenticationContextValue {
         request: SignInRequest,
     ) => Promise<AuthenticationSession>
 
-    signOut: () => void
+    signOut: () => Promise<void>
 
     hasPermission: (
         permissionCode: string,

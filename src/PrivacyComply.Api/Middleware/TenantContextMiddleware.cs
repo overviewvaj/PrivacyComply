@@ -1,4 +1,5 @@
-﻿using PrivacyComply.Application.Abstractions.Tenancy;
+﻿using System.Security.Claims;
+using PrivacyComply.Application.Abstractions.Tenancy;
 using Serilog.Context;
 
 namespace PrivacyComply.Api.Middleware;
@@ -14,30 +15,63 @@ public sealed class TenantContextMiddleware
 
     public async Task InvokeAsync(
         HttpContext httpContext,
-        ITenantContextSetter tenantContextSetter)
+        ITenantContextSetter tenantContextSetter,
+        IAuthenticatedTenantResolver authenticatedTenantResolver)
     {
-        // Temporary development-only tenant resolution.
-        // Production tenant identity will later come from trusted
-        // authenticated server-side context and must never rely on
-        // a client-supplied organisation identifier.
-
         Guid? organisationId = null;
 
-        if (httpContext.Request.Headers.TryGetValue(
-                "X-Organisation-Id",
-                out var organisationIdHeader)
-            && Guid.TryParse(
-                organisationIdHeader.FirstOrDefault(),
-                out var parsedOrganisationId)
-            && parsedOrganisationId != Guid.Empty)
+        if (httpContext.User.Identity?.IsAuthenticated == true)
         {
-            tenantContextSetter.SetOrganisation(parsedOrganisationId);
-            organisationId = parsedOrganisationId;
+            var userAccountIdValue =
+                httpContext.User.FindFirstValue(
+                    ClaimTypes.NameIdentifier);
+
+            var organisationSlug =
+                httpContext.Request.RouteValues[
+                    "organisationSlug"]?.ToString();
+
+            if (Guid.TryParse(
+                    userAccountIdValue,
+                    out var userAccountId)
+                && userAccountId != Guid.Empty
+                && !string.IsNullOrWhiteSpace(
+                    organisationSlug))
+            {
+                var resolution =
+                    await authenticatedTenantResolver
+                        .ResolveAsync(
+                            userAccountId,
+                            organisationSlug,
+                            httpContext.RequestAborted);
+
+                if (!resolution.Succeeded
+                    || !resolution.OrganisationId.HasValue)
+                {
+                    httpContext.Response.StatusCode =
+                        StatusCodes.Status403Forbidden;
+
+                    await httpContext.Response.WriteAsJsonAsync(
+                        new
+                        {
+                            error = "organisation_access_denied"
+                        },
+                        httpContext.RequestAborted);
+
+                    return;
+                }
+
+                organisationId =
+                    resolution.OrganisationId.Value;
+
+                tenantContextSetter.SetOrganisation(
+                    organisationId.Value);
+            }
         }
 
         using (LogContext.PushProperty(
                    "OrganisationId",
-                   organisationId?.ToString() ?? string.Empty))
+                   organisationId?.ToString()
+                   ?? string.Empty))
         {
             await _next(httpContext);
         }

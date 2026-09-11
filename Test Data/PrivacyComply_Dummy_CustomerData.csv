@@ -1,0 +1,13 @@
+﻿CustomerId,FullName,EmailAddress,PhoneNumber,DateOfBirth,AddressLine1,City,PostalCode,AppointmentDate,AppointmentStatus,ConsentFlag,ConsentDate,RecordCreatedDate,RecordUpdatedDate
+CUST-0001,Aarav Mehta,aarav.mehta@example.test,+91 90000 10001,1988-04-12,14 Lake View Road,Pune,411001,2026-08-04,COMPLETED,YES,2025-01-15,2025-01-15 10:12:00,2026-08-04 16:40:00
+CUST-0002,Meera Iyer,meera.iyer@example.test,+91 90000 10002,1993-11-27,22 Green Park,Chennai,600028,2026-08-08,COMPLETED,YES,2025-03-02,2025-03-02 09:05:00,2026-08-08 12:20:00
+CUST-0003,Kabir Shah,kabir.shah@example.test,+91 90000 10003,1979-02-05,8 Sunrise Apartments,Ahmedabad,380015,2026-08-12,CANCELLED,NO,,2024-12-10 14:30:00,2026-08-10 11:15:00
+CUST-0004,Ananya Rao,ananya.rao@example.test,+91 90000 10004,2001-07-19,51 Residency Road,Bengaluru,560025,2026-08-17,COMPLETED,YES,2026-01-06,2026-01-06 08:45:00,2026-08-17 18:10:00
+CUST-0005,Rohan Kulkarni,rohan.kulkarni@example.test,+91 90000 10005,1985-09-30,103 Central Avenue,Nagpur,440010,2026-08-21,NO_SHOW,YES,2025-07-18,2025-07-18 13:22:00,2026-08-21 17:55:00
+CUST-0006,Ishita Sen,ishita.sen@example.test,+91 90000 10006,1996-05-14,7 Park Street,Kolkata,700016,2026-08-25,COMPLETED,YES,2026-02-11,2026-02-11 15:10:00,2026-08-25 10:35:00
+CUST-0007,Arjun Nair,arjun.nair@example.test,+91 90000 10007,1990-12-08,31 Marine Drive,Kochi,682031,2026-08-28,COMPLETED,NO,,2025-10-20 12:00:00,2026-08-28 19:05:00
+CUST-0008,Diya Malhotra,diya.malhotra@example.test,+91 90000 10008,2004-03-22,65 Sector 17,Chandigarh,160017,2026-09-01,SCHEDULED,YES,2026-05-09,2026-05-09 11:18:00,2026-08-30 09:42:00
+CUST-0009,Vikram Desai,vikram.desai@example.test,+91 90000 10009,1972-06-03,19 Alkapuri Main Road,Vadodara,390007,2026-09-05,SCHEDULED,YES,2024-08-14,2024-08-14 16:05:00,2026-09-01 14:27:00
+CUST-0010,Nisha Verma,nisha.verma@example.test,+91 90000 10010,1998-01-16,44 Civil Lines,Jaipur,302006,2026-09-10,SCHEDULED,YES,2026-06-21,2026-06-21 10:50:00,2026-09-07 13:33:00
+CUST-0011,Dev Patel,dev.patel@example.test,,1982-10-11,12 Riverfront Road,Surat,395007,2026-09-11,COMPLETED,YES,2025-09-01,2025-09-01 09:14:00,2026-09-11 10:10:00
+CUST-0012,Sara Khan,sara.khan@example.test,+91 90000 10012,,88 Hill Road,Mumbai,400050,2026-09-11,COMPLETED,YES,2026-03-17,2026-03-17 17:05:00,2026-09-11 12:45:00

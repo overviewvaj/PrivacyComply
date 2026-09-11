@@ -1,0 +1,111 @@
+.new-run-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.new-run-page__header {
+    max-width: 48rem;
+}
+
+.new-run-page__eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.65;
+}
+
+.new-run-page__title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.new-run-page__description {
+    margin: 0.6rem 0 0;
+    line-height: 1.6;
+    opacity: 0.75;
+}
+
+.new-run-page__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 44rem;
+    border: 1px solid rgba(127, 127, 127, 0.25);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+
+.new-run-page__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.new-run-page__label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.new-run-page__select {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 0.5rem;
+    padding: 0 0.75rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.new-run-page__context {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.9rem 1rem;
+    border-radius: 0.5rem;
+    background: rgba(127, 127, 127, 0.08);
+}
+
+    .new-run-page__context span {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.6;
+    }
+
+    .new-run-page__context strong {
+        font-size: 0.95rem;
+    }
+
+.new-run-page__notice {
+    margin: 0;
+    padding-top: 0.25rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    opacity: 0.75;
+}
+
+.new-run-page__actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.25rem;
+}
+
+.new-run-page__start-button {
+    min-height: 2.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.1rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .new-run-page__start-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+    }

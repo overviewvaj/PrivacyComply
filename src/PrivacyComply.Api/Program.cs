@@ -1,8 +1,5 @@
-using System.Text;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-
 using PrivacyComply.Api.Authentication;
 using PrivacyComply.Api.Endpoints.Development;
 using PrivacyComply.Api.Endpoints.Identity;
@@ -13,7 +10,6 @@ using PrivacyComply.Api.Middleware;
 using PrivacyComply.Api.Observability;
 using PrivacyComply.Api.Security;
 using PrivacyComply.Api.Tenancy;
-
 using PrivacyComply.Application.Abstractions.Audit;
 using PrivacyComply.Application.Abstractions.Identity;
 using PrivacyComply.Application.Abstractions.Observability;
@@ -22,14 +18,21 @@ using PrivacyComply.Application.Abstractions.Tenancy;
 using PrivacyComply.Application.Features.Identity.Services;
 using PrivacyComply.Application.Features.Retention.Queries;
 using PrivacyComply.Application.Features.Retention.Services;
-
 using PrivacyComply.Infrastructure.Audit;
 using PrivacyComply.Infrastructure.Database;
 using PrivacyComply.Infrastructure.Identity;
 using PrivacyComply.Infrastructure.Retention.Queries;
 using PrivacyComply.Infrastructure.Retention.Services;
-
 using Serilog;
+using System.Text;
+using PrivacyComply.Application.Features.Tenancy.Services;
+using PrivacyComply.Application.Features.Runs.Queries;
+using PrivacyComply.Infrastructure.Runs.Queries;
+using PrivacyComply.Api.Endpoints.Runs;
+using PrivacyComply.Application.Features.Runs.Commands;
+using PrivacyComply.Infrastructure.Runs.Commands;
+using PrivacyComply.Api.Endpoints.Security;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -230,6 +233,10 @@ builder.Services.AddScoped<
     ISignOutService,
     SignOutService>();
 
+builder.Services.AddScoped<
+    IAuthenticatedTenantResolver,
+    AuthenticatedTenantResolver>();
+
 // ------------------------------------------------------------
 // JWT Configuration
 // ------------------------------------------------------------
@@ -394,6 +401,39 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // ------------------------------------------------------------
+// Cross-Site Request Forgery Protection
+// ------------------------------------------------------------
+
+// PrivacyComply authenticates browser requests using a secure,
+// HttpOnly cookie. State-changing browser requests therefore
+// require an independent antiforgery token.
+//
+// The authentication cookie proves who the user is.
+// The antiforgery token proves that the request originated
+// from the PrivacyComply frontend rather than from an
+// unrelated malicious website.
+//
+// The antiforgery cookie contains no authentication token,
+// customer data, or application data.
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+
+    options.Cookie.Name =
+        "__Host-PrivacyComply-Antiforgery";
+
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.Always;
+
+    options.Cookie.SameSite =
+        SameSiteMode.None;
+
+    options.Cookie.Path = "/";
+});
+
+
+// ------------------------------------------------------------
 // Database
 // ------------------------------------------------------------
 
@@ -441,6 +481,22 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IActorContext,
     ActorContext>();
+
+// ------------------------------------------------------------
+// Run Queries
+// ------------------------------------------------------------
+
+builder.Services.AddScoped<
+    IAnalysisRunQueries,
+    AnalysisRunQueries>();
+
+builder.Services.AddScoped<
+    IAnalysisRunCommands,
+    AnalysisRunCommands>();
+
+builder.Services.AddScoped<
+    ICancelAnalysisRunCommand,
+    CancelAnalysisRunCommand>();
 
 // ------------------------------------------------------------
 // Exception Handling
@@ -509,13 +565,6 @@ if (app.Environment.IsDevelopment())
 // including exception handling and logging, can use it.
 app.UseMiddleware<CorrelationIdMiddleware>();
 
-// Resolve tenant context before logging and exception handling.
-//
-// This is still using the development tenant-resolution mechanism.
-// It will later be replaced by trusted authenticated membership
-// resolution as part of the IAM implementation.
-app.UseMiddleware<TenantContextMiddleware>();
-
 // Request logging wraps the exception handler.
 // This ensures Serilog records the final HTTP status code
 // after known exceptions have been translated.
@@ -526,12 +575,24 @@ app.UseSerilogRequestLogging();
 // HTTP responses before Serilog writes its completion event.
 app.UseExceptionHandler();
 
-// Authenticate the request before authorization.
+// Authenticate the request before tenant resolution.
 //
-// JwtBearer authentication can now retrieve the access token
-// from the PrivacyComply HttpOnly authentication cookie.
+// JwtBearer authentication retrieves the access token from the
+// PrivacyComply secure HttpOnly authentication cookie and builds
+// the trusted authenticated principal used by tenant resolution.
 app.UseAuthentication();
 
+// Resolve the tenant only after authentication.
+//
+// The requested organisation slug is treated as untrusted input.
+// TenantContextMiddleware verifies it against the authenticated
+// user's active server-side organisation memberships before
+// establishing the trusted OrganisationId used by SQL RLS.
+app.UseMiddleware<TenantContextMiddleware>();
+
+// Authorization executes after authentication and tenant
+// resolution so organisation-scoped authorization can use
+// the trusted tenant context.
 app.UseAuthorization();
 
 // ------------------------------------------------------------
@@ -559,5 +620,8 @@ app.MapAuthenticationEndpoints();
 
 app.MapDevelopmentIdentityEndpoints(
     app.Environment);
+
+app.MapRunEndpoints();
+app.MapAntiforgeryEndpoints();
 
 app.Run();

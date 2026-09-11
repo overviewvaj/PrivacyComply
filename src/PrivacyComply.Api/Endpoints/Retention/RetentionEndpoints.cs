@@ -1,7 +1,6 @@
 ﻿using PrivacyComply.Api.Filters;
 using PrivacyComply.Application.Features.Retention.Queries;
 using PrivacyComply.Application.Features.Retention.Services;
-using PrivacyComply.Application.Features.Retention.Exceptions;
 
 namespace PrivacyComply.Api.Endpoints.Retention;
 
@@ -11,7 +10,9 @@ public static class RetentionEndpoints
         this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints
-            .MapGroup("/api/retention")
+            .MapGroup(
+                "/api/organisations/{organisationSlug}/retention")
+            .RequireAuthorization()
             .AddEndpointFilter<TenantContextRequiredFilter>();
 
         group.MapGet(

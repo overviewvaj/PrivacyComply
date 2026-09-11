@@ -7,6 +7,7 @@
 
 .app-layout__header {
     height: 72px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     padding: 0 24px;
@@ -47,6 +48,10 @@
     color: #64748b;
 }
 
+/* ---------------------------------------------------------
+   Application Body
+   --------------------------------------------------------- */
+
 .app-layout__body {
     flex: 1;
     min-height: 0;
@@ -54,7 +59,14 @@
     grid-template-columns: 240px minmax(0, 1fr);
 }
 
+/* ---------------------------------------------------------
+   Common Navigation Sidebar
+   --------------------------------------------------------- */
+
 .app-layout__sidebar {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     border-right: 1px solid #e2e8f0;
     background: #ffffff;
 }
@@ -73,6 +85,7 @@
     font-size: 14px;
     font-weight: 600;
     color: #475569;
+    text-decoration: none;
     transition: background-color 150ms ease, color 150ms ease;
 }
 
@@ -86,6 +99,75 @@
     color: #0f172a;
 }
 
+/* ---------------------------------------------------------
+   Authenticated Account Section
+   --------------------------------------------------------- */
+
+.app-layout__account {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.app-layout__account-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.app-layout__account-name {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #0f172a;
+}
+
+.app-layout__account-organisation {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #64748b;
+    overflow-wrap: anywhere;
+}
+
+.app-layout__sign-out-button {
+    width: 100%;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+    .app-layout__sign-out-button:hover:not(:disabled) {
+        border-color: #94a3b8;
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+    .app-layout__sign-out-button:focus-visible {
+        outline: 2px solid #0f172a;
+        outline-offset: 2px;
+    }
+
+    .app-layout__sign-out-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+/* ---------------------------------------------------------
+   Main Page Content
+   --------------------------------------------------------- */
+
 .app-layout__main {
     min-width: 0;
     overflow: auto;
@@ -97,6 +179,10 @@
     margin: 0 auto;
     padding: 32px;
 }
+
+/* ---------------------------------------------------------
+   Responsive Layout
+   --------------------------------------------------------- */
 
 @media (max-width: 900px) {
     .app-layout__body {

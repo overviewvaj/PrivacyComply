@@ -4,22 +4,20 @@ import {
 } from '../types/ApiError'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
-const developmentOrganisationId =
-    import.meta.env.VITE_DEVELOPMENT_ORGANISATION_ID
 
 if (!apiBaseUrl) {
-    throw new Error('VITE_API_BASE_URL is not configured.')
-}
-
-if (!developmentOrganisationId) {
     throw new Error(
-        'VITE_DEVELOPMENT_ORGANISATION_ID is not configured.',
+        'VITE_API_BASE_URL is not configured.',
     )
 }
 
 const defaultHeaders = {
     Accept: 'application/json',
-    'X-Organisation-Id': developmentOrganisationId,
+}
+
+interface AntiforgeryTokenResponse {
+    requestToken: string
+    headerName: string
 }
 
 async function throwApiError(
@@ -42,15 +40,38 @@ async function throwApiError(
     )
 }
 
+async function getAntiforgeryToken(): Promise<AntiforgeryTokenResponse> {
+    const response = await fetch(
+        `${apiBaseUrl}/api/security/antiforgery-token`,
+        {
+            method: 'GET',
+            headers: defaultHeaders,
+            credentials: 'include',
+        },
+    )
+
+    if (!response.ok) {
+        return throwApiError(
+            response,
+            `Failed to obtain antiforgery token. HTTP status: ${response.status}`,
+        )
+    }
+
+    return response.json() as Promise<AntiforgeryTokenResponse>
+}
+
 export async function getJson<T>(
     path: string,
     fallbackMessage: string,
 ): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-        method: 'GET',
-        headers: defaultHeaders,
-        credentials: 'include',
-    })
+    const response = await fetch(
+        `${apiBaseUrl}${path}`,
+        {
+            method: 'GET',
+            headers: defaultHeaders,
+            credentials: 'include',
+        },
+    )
 
     if (!response.ok) {
         return throwApiError(
@@ -62,20 +83,31 @@ export async function getJson<T>(
     return response.json() as Promise<T>
 }
 
-export async function postJson<TRequest, TResponse>(
+export async function postJson<
+    TRequest,
+    TResponse,
+>(
     path: string,
     body: TRequest,
     fallbackMessage: string,
 ): Promise<TResponse> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-        method: 'POST',
-        headers: {
-            ...defaultHeaders,
-            'Content-Type': 'application/json',
+    const antiforgeryToken =
+        await getAntiforgeryToken()
+
+    const response = await fetch(
+        `${apiBaseUrl}${path}`,
+        {
+            method: 'POST',
+            headers: {
+                ...defaultHeaders,
+                'Content-Type': 'application/json',
+                [antiforgeryToken.headerName]:
+                    antiforgeryToken.requestToken,
+            },
+            credentials: 'include',
+            body: JSON.stringify(body),
         },
-        credentials: 'include',
-        body: JSON.stringify(body),
-    })
+    )
 
     if (!response.ok) {
         return throwApiError(
@@ -84,9 +116,6 @@ export async function postJson<TRequest, TResponse>(
         )
     }
 
-    // Some command-style API endpoints intentionally return
-    // HTTP 204 No Content. In that case there is no response
-    // body to deserialize.
     if (response.status === 204) {
         return undefined as TResponse
     }

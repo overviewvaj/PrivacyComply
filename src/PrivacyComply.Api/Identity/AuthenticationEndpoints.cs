@@ -5,6 +5,8 @@ using PrivacyComply.Api.Authentication;
 using PrivacyComply.Api.Identity;
 using PrivacyComply.Application.Features.Identity.Services;
 
+using Microsoft.AspNetCore.Antiforgery;
+
 namespace PrivacyComply.Api.Endpoints.Identity;
 
 public static class AuthenticationEndpoints
@@ -146,6 +148,43 @@ public static class AuthenticationEndpoints
                 }
 
                 return Results.Ok(result);
+            })
+            .RequireAuthorization();
+
+
+        // --------------------------------------------------------
+        // Antiforgery Token
+        // --------------------------------------------------------
+
+        group.MapGet(
+            "/csrf-token",
+            (
+                HttpContext httpContext,
+                [FromServices] IAntiforgery antiforgery) =>
+            {
+                // Generate and store the antiforgery cookie.
+                //
+                // The browser receives the cookie automatically.
+                // The request token is returned separately and must
+                // be supplied by the React application in the
+                // X-CSRF-TOKEN header for state-changing requests.
+                var tokens =
+                    antiforgery.GetAndStoreTokens(
+                        httpContext);
+
+                if (string.IsNullOrWhiteSpace(
+                        tokens.RequestToken))
+                {
+                    throw new InvalidOperationException(
+                        "Antiforgery request token could not be generated.");
+                }
+
+                return Results.Ok(
+                    new
+                    {
+                        requestToken =
+                            tokens.RequestToken
+                    });
             })
             .RequireAuthorization();
 
