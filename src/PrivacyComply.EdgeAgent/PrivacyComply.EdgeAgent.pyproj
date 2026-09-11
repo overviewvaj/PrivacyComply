@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1eb7417e-7f94-4ba7-98ab-6f16d86713f6</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>PrivacyComply.EdgeAgent.py</StartupFile>
+    <StartupFile>app\main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -12,14 +12,17 @@
     <Name>PrivacyComply.EdgeAgent</Name>
     <RootNamespace>PrivacyComply.EdgeAgent</RootNamespace>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="app\column_classifier.py" />
     <Compile Include="app\file_inspector.py" />
@@ -27,18 +30,37 @@
     <Compile Include="app\finding_builder.py" />
     <Compile Include="app\main.py" />
     <Compile Include="app\value_classifier.py" />
-    <Compile Include="PrivacyComply.EdgeAgent.py" />
+
+    <Compile Include="tests\test_column_classifier.py" />
+    <Compile Include="tests\test_file_inspector.py" />
+    <Compile Include="tests\test_file_profiler.py" />
+    <Compile Include="tests\test_finding_builder.py" />
+    <Compile Include="tests\test_main.py" />
+    <Compile Include="tests\test_value_classifier.py" />
+
+
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <Folder Include="app\" />
+    <Folder Include="tests\" />
   </ItemGroup>
+
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+
   <!-- Uncomment the CoreCompile target to enable the Build command in
        Visual Studio and specify your pre- and post-build commands in
        the BeforeBuild and AfterBuild targets below. -->
+
   <!--<Target Name="CoreCompile" />-->
+
   <Target Name="BeforeBuild">
   </Target>
+
   <Target Name="AfterBuild">
   </Target>
 </Project>
