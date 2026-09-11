@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrivacyComply.Infrastructur
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "PrivacyComply.Web", "src\PrivacyComply.Web\PrivacyComply.Web.esproj", "{1E89D5DA-8383-4A00-1CA0-59DECD1F5F2F}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PrivacyComply.EdgeAgent", "src\PrivacyComply.EdgeAgent\PrivacyComply.EdgeAgent.pyproj", "{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,12 @@ Global
 		{1E89D5DA-8383-4A00-1CA0-59DECD1F5F2F}.Release|x86.ActiveCfg = Release|Any CPU
 		{1E89D5DA-8383-4A00-1CA0-59DECD1F5F2F}.Release|x86.Build.0 = Release|Any CPU
 		{1E89D5DA-8383-4A00-1CA0-59DECD1F5F2F}.Release|x86.Deploy.0 = Release|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Release|x64.ActiveCfg = Release|Any CPU
+		{1EB7417E-7F94-4BA7-98AB-6F16D86713F6}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
