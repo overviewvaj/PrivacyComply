@@ -1,4 +1,4 @@
-import {
+﻿import {
     useState,
 } from 'react'
 
@@ -8,14 +8,38 @@ import {
 } from 'react-router-dom'
 
 import {
+    getEdgeAgentHealth,
+    inspectLocalFile,
+} from '../../services/edgeAgentService'
+
+import {
+    completeAnalysisRun,
     createAnalysisRun,
+    failAnalysisRun,
+    startAnalysisRun,
 } from '../../services/runService'
 
+import type {
+    EdgeInspectionResult,
+} from '../../types/EdgeInspection'
+
 import './NewRunPage.css'
+
 
 type SourceTypeCode =
     | 'EXCEL'
     | 'CSV'
+
+
+type AnalysisStage =
+    | 'IDLE'
+    | 'CREATING_RUN'
+    | 'STARTING_RUN'
+    | 'CHECKING_EDGE_AGENT'
+    | 'INSPECTING_LOCAL_FILE'
+    | 'COMPLETING_RUN'
+    | 'FAILING_RUN'
+
 
 function NewRunPage() {
     const { organisationSlug } = useParams<{
@@ -36,8 +60,21 @@ function NewRunPage() {
     const [submissionError, setSubmissionError] =
         useState<string | null>(null)
 
-    const [isSubmitting, setIsSubmitting] =
-        useState(false)
+    const [
+        inspectionResult,
+        setInspectionResult,
+    ] =
+        useState<EdgeInspectionResult | null>(
+            null,
+        )
+
+    const [analysisStage, setAnalysisStage] =
+        useState<AnalysisStage>('IDLE')
+
+
+    const isSubmitting =
+        analysisStage !== 'IDLE'
+
 
     const handleSourceTypeChange = (
         sourceType: SourceTypeCode,
@@ -46,13 +83,16 @@ function NewRunPage() {
         setSelectedFile(null)
         setFileError(null)
         setSubmissionError(null)
+        setInspectionResult(null)
     }
+
 
     const handleFileSelection = (
         file: File | null,
     ) => {
         setFileError(null)
         setSubmissionError(null)
+        setInspectionResult(null)
         setSelectedFile(null)
 
         if (!file) {
@@ -63,8 +103,7 @@ function NewRunPage() {
             file.name.toLowerCase()
 
         const isValidExcelFile =
-            fileName.endsWith('.xlsx') ||
-            fileName.endsWith('.xls')
+            fileName.endsWith('.xlsx')
 
         const isValidCsvFile =
             fileName.endsWith('.csv')
@@ -74,7 +113,7 @@ function NewRunPage() {
             !isValidExcelFile
         ) {
             setFileError(
-                'Please select a valid Excel file (.xlsx or .xls).',
+                'Please select a valid Excel file (.xlsx).',
             )
 
             return
@@ -94,6 +133,33 @@ function NewRunPage() {
         setSelectedFile(file)
     }
 
+
+    const getStartButtonText = (): string => {
+        switch (analysisStage) {
+            case 'CREATING_RUN':
+                return 'Creating Run...'
+
+            case 'STARTING_RUN':
+                return 'Starting Run...'
+
+            case 'CHECKING_EDGE_AGENT':
+                return 'Checking Local Agent...'
+
+            case 'INSPECTING_LOCAL_FILE':
+                return 'Inspecting File Locally...'
+
+            case 'COMPLETING_RUN':
+                return 'Completing Run...'
+
+            case 'FAILING_RUN':
+                return 'Marking Run Failed...'
+
+            default:
+                return 'Start Analysis'
+        }
+    }
+
+
     const handleStartAnalysis = async () => {
         if (
             !organisationSlug ||
@@ -103,16 +169,142 @@ function NewRunPage() {
             return
         }
 
-        try {
-            setIsSubmitting(true)
-            setSubmissionError(null)
+        let createdAnalysisRunId: string | null =
+            null
 
-            await createAnalysisRun(
+        let runStarted = false
+
+        try {
+            setSubmissionError(null)
+            setInspectionResult(null)
+
+            /*
+             * Step 1:
+             * Create the central analysis run first.
+             *
+             * Only source metadata known before
+             * inspection is sent centrally.
+             */
+            setAnalysisStage(
+                'CREATING_RUN',
+            )
+
+            const createdRun =
+                await createAnalysisRun(
+                    organisationSlug,
+                    {
+                        sourceTypeCode,
+                        sourceName:
+                            selectedFile.name,
+                    },
+                )
+
+            createdAnalysisRunId =
+                createdRun.analysisRunId
+
+            /*
+             * Step 2:
+             * Transition the central run from
+             * QUEUED to RUNNING.
+             */
+            setAnalysisStage(
+                'STARTING_RUN',
+            )
+
+            await startAnalysisRun(
                 organisationSlug,
+                createdAnalysisRunId,
+            )
+
+            runStarted = true
+
+            /*
+             * Step 3:
+             * Confirm that the local PrivacyComply
+             * Edge Agent is available.
+             */
+            setAnalysisStage(
+                'CHECKING_EDGE_AGENT',
+            )
+
+            const edgeAgentAvailable =
+                await getEdgeAgentHealth()
+
+            if (!edgeAgentAvailable) {
+                throw new Error(
+                    'The PrivacyComply Edge Agent is not available. ' +
+                    'Please start the local Edge Agent and try again.',
+                )
+            }
+
+            /*
+             * Step 4:
+             * Send the raw file directly from the
+             * browser to the local Edge Agent.
+             *
+             * The file is NOT sent to
+             * PrivacyComply.Api.
+             */
+            setAnalysisStage(
+                'INSPECTING_LOCAL_FILE',
+            )
+
+            const localInspectionResult =
+                await inspectLocalFile(
+                    selectedFile,
+                )
+
+            if (
+                localInspectionResult
+                    .processingLocation !==
+                'LOCAL_EDGE_AGENT'
+            ) {
+                throw new Error(
+                    'The inspection response did not confirm local Edge Agent processing.',
+                )
+            }
+
+            setInspectionResult(
+                localInspectionResult,
+            )
+
+            /*
+             * Step 5:
+             * Send only the safe local inspection
+             * summary to the central API and mark
+             * the run COMPLETED.
+             *
+             * No raw customer data is included.
+             */
+            setAnalysisStage(
+                'COMPLETING_RUN',
+            )
+
+            await completeAnalysisRun(
+                organisationSlug,
+                createdAnalysisRunId,
                 {
-                    sourceTypeCode,
-                    sourceName: selectedFile.name,
-                    sourceObjectName: null,
+                    sourceObjectName:
+                        localInspectionResult
+                            .sheetName,
+
+                    totalRecordsAnalysed:
+                        localInspectionResult
+                            .rowCount,
+
+                    totalFieldsDiscovered:
+                        localInspectionResult
+                            .columnCount,
+
+                    totalUnclassifiedFields:
+                        localInspectionResult
+                            .classificationSummary
+                            .unclassifiedColumns,
+
+                    classificationCoveragePercentage:
+                        localInspectionResult
+                            .classificationSummary
+                            .classificationCoveragePercentage,
                 },
             )
 
@@ -120,15 +312,53 @@ function NewRunPage() {
                 `/${organisationSlug}/runs`,
             )
         } catch (error) {
+            /*
+             * If a central run exists and was
+             * successfully moved to RUNNING,
+             * attempt to move it to FAILED.
+             *
+             * The failure code is intentionally
+             * generic. Raw exception text and
+             * customer data are not persisted.
+             */
+            if (
+                createdAnalysisRunId &&
+                runStarted
+            ) {
+                try {
+                    setAnalysisStage(
+                        'FAILING_RUN',
+                    )
+
+                    await failAnalysisRun(
+                        organisationSlug,
+                        createdAnalysisRunId,
+                        'LOCAL_ANALYSIS_FAILED',
+                    )
+                } catch {
+                    /*
+                     * Preserve the original error
+                     * shown to the user.
+                     *
+                     * Failure-transition errors are
+                     * not used to replace it.
+                     */
+                }
+            }
+
             setSubmissionError(
                 error instanceof Error
                     ? error.message
-                    : 'An unexpected error occurred while creating the analysis run.',
+                    : (
+                        'An unexpected error occurred ' +
+                        'while starting the analysis run.'
+                    ),
             )
         } finally {
-            setIsSubmitting(false)
+            setAnalysisStage('IDLE')
         }
     }
+
 
     return (
         <section className="new-run-page">
@@ -142,8 +372,9 @@ function NewRunPage() {
                 </h1>
 
                 <p className="new-run-page__description">
-                    Start a new PrivacyComply analysis run
-                    against a supported local data source.
+                    Start a new PrivacyComply
+                    analysis run against a
+                    supported local data source.
                 </p>
             </header>
 
@@ -193,13 +424,15 @@ function NewRunPage() {
                         className="new-run-page__file-input"
                         disabled={isSubmitting}
                         accept={
-                            sourceTypeCode === 'EXCEL'
-                                ? '.xlsx,.xls'
+                            sourceTypeCode ===
+                                'EXCEL'
+                                ? '.xlsx'
                                 : '.csv'
                         }
                         onChange={(event) =>
                             handleFileSelection(
-                                event.target.files?.[0] ??
+                                event.target
+                                    .files?.[0] ??
                                 null,
                             )
                         }
@@ -243,10 +476,33 @@ function NewRunPage() {
                 </div>
 
                 <p className="new-run-page__notice">
-                    The selected file remains local at this
-                    stage. Raw customer data will not be
-                    stored centrally by PrivacyComply.
+                    The selected file is inspected
+                    locally by the PrivacyComply
+                    Edge Agent. Raw customer data
+                    is not uploaded to or stored by
+                    the central PrivacyComply API.
                 </p>
+
+                {inspectionResult && (
+                    <div className="new-run-page__context">
+                        <span>
+                            Local inspection
+                        </span>
+
+                        <strong>
+                            {
+                                inspectionResult
+                                    .rowCount
+                            }{' '}
+                            rows ·{' '}
+                            {
+                                inspectionResult
+                                    .columnCount
+                            }{' '}
+                            columns
+                        </strong>
+                    </div>
+                )}
 
                 {submissionError && (
                     <p className="new-run-page__error">
@@ -266,14 +522,13 @@ function NewRunPage() {
                             handleStartAnalysis
                         }
                     >
-                        {isSubmitting
-                            ? 'Creating Run...'
-                            : 'Start Analysis'}
+                        {getStartButtonText()}
                     </button>
                 </div>
             </section>
         </section>
     )
 }
+
 
 export default NewRunPage

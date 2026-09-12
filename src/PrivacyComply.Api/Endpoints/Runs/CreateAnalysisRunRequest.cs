@@ -3,4 +3,8 @@
 public sealed record CreateAnalysisRunRequest(
     string SourceTypeCode,
     string SourceName,
-    string? SourceObjectName);
+    string? SourceObjectName,
+    long? TotalRecordsAnalysed,
+    int? TotalFieldsDiscovered,
+    int? TotalUnclassifiedFields,
+    decimal? ClassificationCoveragePercentage);

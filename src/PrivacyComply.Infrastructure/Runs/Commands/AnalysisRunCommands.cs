@@ -66,7 +66,6 @@ public sealed class AnalysisRunCommands
                 RunStatusCode,
                 SourceTypeCode,
                 SourceName,
-                SourceObjectName,
                 RequestedByUserAccountId,
                 RequestedDateTime,
                 CorrelationId,
@@ -81,7 +80,6 @@ public sealed class AnalysisRunCommands
                 N'QUEUED',
                 @SourceTypeCode,
                 @SourceName,
-                @SourceObjectName,
                 @RequestedByUserAccountId,
                 @RequestedDateTime,
                 @CorrelationId,
@@ -115,11 +113,6 @@ public sealed class AnalysisRunCommands
             command.SourceName);
 
         commandSql.Parameters.AddWithValue(
-            "@SourceObjectName",
-            (object?)command.SourceObjectName ??
-            DBNull.Value);
-
-        commandSql.Parameters.AddWithValue(
             "@RequestedByUserAccountId",
             command.RequestedByUserAccountId);
 
@@ -147,5 +140,194 @@ public sealed class AnalysisRunCommands
                 reader.GetOrdinal("RunStatusCode")),
             reader.GetDateTime(
                 reader.GetOrdinal("RequestedDateTime")));
+    }
+
+    public async Task StartAsync(
+        StartAnalysisRunCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection =
+            await _sqlConnectionFactory.OpenConnectionAsync(
+                cancellationToken);
+
+        const string sql = """
+            UPDATE workflow.AnalysisRun
+            SET
+                RunStatusCode = N'RUNNING',
+                StartedDateTime = SYSUTCDATETIME(),
+                UpdatedDateTime = SYSUTCDATETIME(),
+                UpdatedBy = CONVERT(
+                    NVARCHAR(100),
+                    @UserAccountId
+                )
+            WHERE
+                OrganisationId = @OrganisationId
+                AND AnalysisRunId = @AnalysisRunId
+                AND RunStatusCode = N'QUEUED'
+                AND IsDeleted = 0;
+            """;
+
+        await using var commandSql =
+            new SqlCommand(sql, connection);
+
+        commandSql.Parameters.AddWithValue(
+            "@OrganisationId",
+            command.OrganisationId);
+
+        commandSql.Parameters.AddWithValue(
+            "@AnalysisRunId",
+            command.AnalysisRunId);
+
+        commandSql.Parameters.AddWithValue(
+            "@UserAccountId",
+            command.UserAccountId);
+
+        var affectedRows =
+            await commandSql.ExecuteNonQueryAsync(
+                cancellationToken);
+
+        if (affectedRows != 1)
+        {
+            throw new InvalidOperationException(
+                "The analysis run could not be started. It may not exist or may no longer be queued.");
+        }
+    }
+
+    public async Task CompleteAsync(
+        CompleteAnalysisRunCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection =
+            await _sqlConnectionFactory.OpenConnectionAsync(
+                cancellationToken);
+
+        const string sql = """
+            UPDATE workflow.AnalysisRun
+            SET
+                RunStatusCode = N'COMPLETED',
+                SourceObjectName = @SourceObjectName,
+                TotalRecordsAnalysed = @TotalRecordsAnalysed,
+                TotalFieldsDiscovered = @TotalFieldsDiscovered,
+                TotalUnclassifiedFields = @TotalUnclassifiedFields,
+                ClassificationCoveragePercentage =
+                    @ClassificationCoveragePercentage,
+                CompletedDateTime = SYSUTCDATETIME(),
+                UpdatedDateTime = SYSUTCDATETIME(),
+                UpdatedBy = CONVERT(
+                    NVARCHAR(100),
+                    @UserAccountId
+                )
+            WHERE
+                OrganisationId = @OrganisationId
+                AND AnalysisRunId = @AnalysisRunId
+                AND RunStatusCode = N'RUNNING'
+                AND IsDeleted = 0;
+            """;
+
+        await using var commandSql =
+            new SqlCommand(sql, connection);
+
+        commandSql.Parameters.AddWithValue(
+            "@OrganisationId",
+            command.OrganisationId);
+
+        commandSql.Parameters.AddWithValue(
+            "@AnalysisRunId",
+            command.AnalysisRunId);
+
+        commandSql.Parameters.AddWithValue(
+            "@UserAccountId",
+            command.UserAccountId);
+
+        commandSql.Parameters.AddWithValue(
+            "@SourceObjectName",
+            (object?)command.SourceObjectName ??
+            DBNull.Value);
+
+        commandSql.Parameters.AddWithValue(
+            "@TotalRecordsAnalysed",
+            command.TotalRecordsAnalysed);
+
+        commandSql.Parameters.AddWithValue(
+            "@TotalFieldsDiscovered",
+            command.TotalFieldsDiscovered);
+
+        commandSql.Parameters.AddWithValue(
+            "@TotalUnclassifiedFields",
+            command.TotalUnclassifiedFields);
+
+        commandSql.Parameters.AddWithValue(
+            "@ClassificationCoveragePercentage",
+            command.ClassificationCoveragePercentage);
+
+        var affectedRows =
+            await commandSql.ExecuteNonQueryAsync(
+                cancellationToken);
+
+        if (affectedRows != 1)
+        {
+            throw new InvalidOperationException(
+                "The analysis run could not be completed. It may not exist or may no longer be running.");
+        }
+    }
+
+    public async Task FailAsync(
+        FailAnalysisRunCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection =
+            await _sqlConnectionFactory.OpenConnectionAsync(
+                cancellationToken);
+
+        const string sql = """
+            UPDATE workflow.AnalysisRun
+            SET
+                RunStatusCode = N'FAILED',
+                FailedDateTime = SYSUTCDATETIME(),
+                FailureCode = @FailureCode,
+                FailureMessage = NULL,
+                UpdatedDateTime = SYSUTCDATETIME(),
+                UpdatedBy = CONVERT(
+                    NVARCHAR(100),
+                    @UserAccountId
+                )
+            WHERE
+                OrganisationId = @OrganisationId
+                AND AnalysisRunId = @AnalysisRunId
+                AND RunStatusCode IN (
+                    N'QUEUED',
+                    N'RUNNING'
+                )
+                AND IsDeleted = 0;
+            """;
+
+        await using var commandSql =
+            new SqlCommand(sql, connection);
+
+        commandSql.Parameters.AddWithValue(
+            "@OrganisationId",
+            command.OrganisationId);
+
+        commandSql.Parameters.AddWithValue(
+            "@AnalysisRunId",
+            command.AnalysisRunId);
+
+        commandSql.Parameters.AddWithValue(
+            "@UserAccountId",
+            command.UserAccountId);
+
+        commandSql.Parameters.AddWithValue(
+            "@FailureCode",
+            command.FailureCode);
+
+        var affectedRows =
+            await commandSql.ExecuteNonQueryAsync(
+                cancellationToken);
+
+        if (affectedRows != 1)
+        {
+            throw new InvalidOperationException(
+                "The analysis run could not be failed. It may not exist or may already be in a terminal state.");
+        }
     }
 }

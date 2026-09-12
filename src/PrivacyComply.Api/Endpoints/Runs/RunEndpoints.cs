@@ -127,7 +127,6 @@ public static class RunEndpoints
                             tenantContext.OrganisationId,
                             sourceTypeCode,
                             sourceName,
-                            request.SourceObjectName,
                             userAccountId,
                             correlationId),
                         cancellationToken);
@@ -137,9 +136,314 @@ public static class RunEndpoints
                     result);
             });
 
-        // NEW
-        // Allows an authorised user to cancel a run
-        // only while that run is still in QUEUED status.
+        group.MapPost(
+            "/{analysisRunId:guid}/start",
+            async (
+                Guid analysisRunId,
+                HttpContext httpContext,
+                ITenantContext tenantContext,
+                IUserPermissionQueries userPermissionQueries,
+                IAnalysisRunCommands analysisRunCommands,
+                IAntiforgery antiforgery,
+                CancellationToken cancellationToken) =>
+            {
+                await antiforgery.ValidateRequestAsync(
+                    httpContext);
+
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var userAccountIdValue =
+                    httpContext.User.FindFirstValue(
+                        ClaimTypes.NameIdentifier);
+
+                if (
+                    !Guid.TryParse(
+                        userAccountIdValue,
+                        out var userAccountId)
+                )
+                {
+                    return Results.Unauthorized();
+                }
+
+                var permissions =
+                    await userPermissionQueries
+                        .GetEffectivePermissionsAsync(
+                            userAccountId,
+                            tenantContext.OrganisationId,
+                            cancellationToken);
+
+                var canRunDiscovery =
+                    permissions.Any(
+                        permission =>
+                            string.Equals(
+                                permission.PermissionCode,
+                                DiscoveryRunPermission,
+                                StringComparison.OrdinalIgnoreCase));
+
+                if (!canRunDiscovery)
+                {
+                    return Results.Forbid();
+                }
+
+                try
+                {
+                    await analysisRunCommands.StartAsync(
+                        new StartAnalysisRunCommand(
+                            tenantContext.OrganisationId,
+                            analysisRunId,
+                            userAccountId),
+                        cancellationToken);
+
+                    return Results.NoContent();
+                }
+                catch (InvalidOperationException)
+                {
+                    return Results.Conflict(
+                        new
+                        {
+                            error =
+                                "analysis_run_not_startable",
+
+                            message =
+                                "The analysis run could not be started because it does not exist or is no longer queued.",
+                        });
+                }
+            });
+
+        group.MapPost(
+            "/{analysisRunId:guid}/complete",
+            async (
+                Guid analysisRunId,
+                CompleteAnalysisRunRequest request,
+                HttpContext httpContext,
+                ITenantContext tenantContext,
+                IUserPermissionQueries userPermissionQueries,
+                IAnalysisRunCommands analysisRunCommands,
+                IAntiforgery antiforgery,
+                CancellationToken cancellationToken) =>
+            {
+                await antiforgery.ValidateRequestAsync(
+                    httpContext);
+
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var userAccountIdValue =
+                    httpContext.User.FindFirstValue(
+                        ClaimTypes.NameIdentifier);
+
+                if (
+                    !Guid.TryParse(
+                        userAccountIdValue,
+                        out var userAccountId)
+                )
+                {
+                    return Results.Unauthorized();
+                }
+
+                var permissions =
+                    await userPermissionQueries
+                        .GetEffectivePermissionsAsync(
+                            userAccountId,
+                            tenantContext.OrganisationId,
+                            cancellationToken);
+
+                var canRunDiscovery =
+                    permissions.Any(
+                        permission =>
+                            string.Equals(
+                                permission.PermissionCode,
+                                DiscoveryRunPermission,
+                                StringComparison.OrdinalIgnoreCase));
+
+                if (!canRunDiscovery)
+                {
+                    return Results.Forbid();
+                }
+
+                if (
+                    request.TotalRecordsAnalysed < 0 ||
+                    request.TotalFieldsDiscovered < 0 ||
+                    request.TotalUnclassifiedFields < 0
+                )
+                {
+                    return Results.BadRequest(
+                        new
+                        {
+                            error =
+                                "invalid_inspection_summary",
+
+                            message =
+                                "Inspection summary counts cannot be negative.",
+                        });
+                }
+
+                if (
+                    request.TotalUnclassifiedFields >
+                    request.TotalFieldsDiscovered
+                )
+                {
+                    return Results.BadRequest(
+                        new
+                        {
+                            error =
+                                "invalid_inspection_summary",
+
+                            message =
+                                "The number of unclassified fields cannot exceed the total number of discovered fields.",
+                        });
+                }
+
+                if (
+                    request.ClassificationCoveragePercentage < 0m ||
+                    request.ClassificationCoveragePercentage > 100m
+                )
+                {
+                    return Results.BadRequest(
+                        new
+                        {
+                            error =
+                                "invalid_classification_coverage",
+
+                            message =
+                                "Classification coverage must be between 0 and 100.",
+                        });
+                }
+
+                try
+                {
+                    await analysisRunCommands.CompleteAsync(
+                        new CompleteAnalysisRunCommand(
+                            tenantContext.OrganisationId,
+                            analysisRunId,
+                            userAccountId,
+                            request.SourceObjectName,
+                            request.TotalRecordsAnalysed,
+                            request.TotalFieldsDiscovered,
+                            request.TotalUnclassifiedFields,
+                            request.ClassificationCoveragePercentage),
+                        cancellationToken);
+
+                    return Results.NoContent();
+                }
+                catch (InvalidOperationException)
+                {
+                    return Results.Conflict(
+                        new
+                        {
+                            error =
+                                "analysis_run_not_completable",
+
+                            message =
+                                "The analysis run could not be completed because it does not exist or is no longer running.",
+                        });
+                }
+            });
+
+        group.MapPost(
+            "/{analysisRunId:guid}/fail",
+            async (
+                Guid analysisRunId,
+                string? failureCode,
+                HttpContext httpContext,
+                ITenantContext tenantContext,
+                IUserPermissionQueries userPermissionQueries,
+                IAnalysisRunCommands analysisRunCommands,
+                IAntiforgery antiforgery,
+                CancellationToken cancellationToken) =>
+            {
+                await antiforgery.ValidateRequestAsync(
+                    httpContext);
+
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var userAccountIdValue =
+                    httpContext.User.FindFirstValue(
+                        ClaimTypes.NameIdentifier);
+
+                if (
+                    !Guid.TryParse(
+                        userAccountIdValue,
+                        out var userAccountId)
+                )
+                {
+                    return Results.Unauthorized();
+                }
+
+                var permissions =
+                    await userPermissionQueries
+                        .GetEffectivePermissionsAsync(
+                            userAccountId,
+                            tenantContext.OrganisationId,
+                            cancellationToken);
+
+                var canRunDiscovery =
+                    permissions.Any(
+                        permission =>
+                            string.Equals(
+                                permission.PermissionCode,
+                                DiscoveryRunPermission,
+                                StringComparison.OrdinalIgnoreCase));
+
+                if (!canRunDiscovery)
+                {
+                    return Results.Forbid();
+                }
+
+                var normalizedFailureCode =
+                    string.IsNullOrWhiteSpace(failureCode)
+                        ? "ANALYSIS_EXECUTION_FAILED"
+                        : failureCode
+                            .Trim()
+                            .ToUpperInvariant();
+
+                if (normalizedFailureCode.Length > 100)
+                {
+                    return Results.BadRequest(
+                        new
+                        {
+                            error =
+                                "invalid_failure_code",
+
+                            message =
+                                "Failure code cannot exceed 100 characters.",
+                        });
+                }
+
+                try
+                {
+                    await analysisRunCommands.FailAsync(
+                        new FailAnalysisRunCommand(
+                            tenantContext.OrganisationId,
+                            analysisRunId,
+                            userAccountId,
+                            normalizedFailureCode),
+                        cancellationToken);
+
+                    return Results.NoContent();
+                }
+                catch (InvalidOperationException)
+                {
+                    return Results.Conflict(
+                        new
+                        {
+                            error =
+                                "analysis_run_not_failable",
+
+                            message =
+                                "The analysis run could not be marked as failed because it does not exist or is already in a terminal state.",
+                        });
+                }
+            });
+
         group.MapPost(
             "/{analysisRunId:guid}/cancel",
             async (
@@ -151,26 +455,18 @@ public static class RunEndpoints
                 IAntiforgery antiforgery,
                 CancellationToken cancellationToken) =>
             {
-                // NEW
-                // Cancellation is a state-changing operation,
-                // so it must pass antiforgery validation.
                 await antiforgery.ValidateRequestAsync(
                     httpContext);
 
-                // NEW
                 if (!tenantContext.HasTenant)
                 {
                     return Results.Forbid();
                 }
 
-                // NEW
-                // Read the authenticated user from the
-                // trusted server-side claims identity.
                 var userAccountIdValue =
                     httpContext.User.FindFirstValue(
                         ClaimTypes.NameIdentifier);
 
-                // NEW
                 if (
                     !Guid.TryParse(
                         userAccountIdValue,
@@ -180,9 +476,6 @@ public static class RunEndpoints
                     return Results.Unauthorized();
                 }
 
-                // NEW
-                // Resolve effective permissions for the
-                // authenticated user within this tenant.
                 var permissions =
                     await userPermissionQueries
                         .GetEffectivePermissionsAsync(
@@ -190,10 +483,6 @@ public static class RunEndpoints
                             tenantContext.OrganisationId,
                             cancellationToken);
 
-                // NEW
-                // For now, the same permission that allows
-                // discovery execution also allows cancelling
-                // a queued discovery run.
                 var canRunDiscovery =
                     permissions.Any(
                         permission =>
@@ -202,7 +491,6 @@ public static class RunEndpoints
                                 DiscoveryRunPermission,
                                 StringComparison.OrdinalIgnoreCase));
 
-                // NEW
                 if (!canRunDiscovery)
                 {
                     return Results.Forbid();
@@ -210,7 +498,6 @@ public static class RunEndpoints
 
                 try
                 {
-                    // NEW
                     var result =
                         await cancelAnalysisRunCommand
                             .CancelAsync(
@@ -220,18 +507,10 @@ public static class RunEndpoints
                                     userAccountId),
                                 cancellationToken);
 
-                    // NEW
                     return Results.Ok(result);
                 }
                 catch (InvalidOperationException)
                 {
-                    // NEW
-                    // This includes cases where:
-                    // - the run does not exist,
-                    // - the run belongs to another tenant,
-                    // - the run has already started,
-                    // - the run has already completed,
-                    // - the run has already been cancelled.
                     return Results.Conflict(
                         new
                         {

@@ -1,6 +1,7 @@
 import type { AnalysisRun } from '../types/AnalysisRun'
 
 import type {
+    CompleteAnalysisRunRequest,
     CreateAnalysisRunRequest,
     CreateAnalysisRunResult,
 } from '../types/CreateAnalysisRun'
@@ -33,6 +34,21 @@ function getRunApiBasePath(
     )}/runs`
 }
 
+function normalizeAnalysisRunId(
+    analysisRunId: string,
+): string {
+    const normalizedAnalysisRunId =
+        analysisRunId.trim()
+
+    if (!normalizedAnalysisRunId) {
+        throw new Error(
+            'An analysis run identifier is required.',
+        )
+    }
+
+    return normalizedAnalysisRunId
+}
+
 export function getAnalysisRuns(
     organisationSlug: string,
 ): Promise<AnalysisRun[]> {
@@ -62,6 +78,90 @@ export function createAnalysisRun(
     )
 }
 
+export function startAnalysisRun(
+    organisationSlug: string,
+    analysisRunId: string,
+): Promise<void> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return postJson<
+        Record<string, never>,
+        void
+    >(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/start`,
+        {},
+        'Failed to start analysis run.',
+    )
+}
+
+export function completeAnalysisRun(
+    organisationSlug: string,
+    analysisRunId: string,
+    request: CompleteAnalysisRunRequest,
+): Promise<void> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return postJson<
+        CompleteAnalysisRunRequest,
+        void
+    >(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/complete`,
+        request,
+        'Failed to complete analysis run.',
+    )
+}
+
+export function failAnalysisRun(
+    organisationSlug: string,
+    analysisRunId: string,
+    failureCode?: string,
+): Promise<void> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    const normalizedFailureCode =
+        failureCode?.trim()
+
+    const queryString =
+        normalizedFailureCode
+            ? `?failureCode=${encodeURIComponent(
+                normalizedFailureCode,
+            )}`
+            : ''
+
+    return postJson<
+        Record<string, never>,
+        void
+    >(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/fail${queryString}`,
+        {},
+        'Failed to mark analysis run as failed.',
+    )
+}
+
 export function cancelAnalysisRun(
     organisationSlug: string,
     analysisRunId: string,
@@ -70,13 +170,9 @@ export function cancelAnalysisRun(
         getRunApiBasePath(organisationSlug)
 
     const normalizedAnalysisRunId =
-        analysisRunId.trim()
-
-    if (!normalizedAnalysisRunId) {
-        throw new Error(
-            'An analysis run identifier is required.',
+        normalizeAnalysisRunId(
+            analysisRunId,
         )
-    }
 
     return postJson<
         Record<string, never>,
