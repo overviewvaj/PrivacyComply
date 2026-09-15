@@ -16,6 +16,9 @@ class ClassificationSummaryResponse(
     classifiedColumns: int
     unclassifiedColumns: int
     classificationCoveragePercentage: float
+    totalPersonalDataColumns: int = 0
+    totalContextDependentColumns: int = 0
+    totalRegulatedIdentifierColumns: int = 0
 
 
 class FindingSummaryResponse(
@@ -39,6 +42,9 @@ class ColumnProfileResponse(
     classificationCode: str | None
     classificationMethod: str
     matchPercentage: float | None
+    privacyCategory: str | None = None
+    isPersonalData: bool = False
+    isRegulatedIdentifier: bool = False
 
 
 class FindingResponse(
@@ -51,6 +57,25 @@ class FindingResponse(
     findingCode: str
     category: str | None = None
     severity: str
+
+
+class EvidenceItemResponse(
+    BaseModel
+):
+    model_config = ConfigDict(
+        extra="allow",
+    )
+
+    evidenceReference: str
+    evidenceType: str
+    sourceReference: str
+    fieldName: str | None = None
+    classificationCode: str | None = None
+    ruleVersion: str
+    agentVersion: str
+    evidenceHash: str
+    hashAlgorithm: str
+    metadataJson: str
 
 
 class FileInspectionResponse(
@@ -81,3 +106,7 @@ class FileInspectionResponse(
     findings: list[
         FindingResponse
     ]
+
+    evidence: list[
+        EvidenceItemResponse
+    ] = []

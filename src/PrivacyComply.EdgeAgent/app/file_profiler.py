@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from app.column_classifier import classify_column_name
+from app.privacy_classifier import categorize_column
 from app.value_classifier import classify_values
 
 
@@ -115,7 +116,6 @@ def build_column_profiles(
             classification["classificationStatus"]
             == "UNCLASSIFIED"
         ):
-           
             value_classification = classify_values(
                 values
             )
@@ -142,6 +142,10 @@ def build_column_profiles(
                         ),
                 }
 
+        privacy = categorize_column(
+            classification.get("classificationCode")
+        )
+
         profiles.append(
             {
                 "columnName": column_name,
@@ -166,6 +170,12 @@ def build_column_profiles(
                     classification.get(
                         "matchPercentage"
                     ),
+                "privacyCategory":
+                    privacy["privacyCategory"],
+                "isPersonalData":
+                    privacy["isPersonalData"],
+                "isRegulatedIdentifier":
+                    privacy["isRegulatedIdentifier"],
             }
         )
 
@@ -201,10 +211,35 @@ def build_classification_summary(
         else 0.0
     )
 
+    total_personal_data_columns = sum(
+        1
+        for profile in column_profiles
+        if profile.get("isPersonalData", False)
+    )
+
+    total_context_dependent_columns = sum(
+        1
+        for profile in column_profiles
+        if profile.get("privacyCategory")
+        == "CONTEXT_DEPENDENT"
+    )
+
+    total_regulated_identifier_columns = sum(
+        1
+        for profile in column_profiles
+        if profile.get("isRegulatedIdentifier", False)
+    )
+
     return {
         "totalColumns": total_columns,
         "classifiedColumns": classified_columns,
         "unclassifiedColumns": unclassified_columns,
         "classificationCoveragePercentage":
             classification_coverage_percentage,
+        "totalPersonalDataColumns":
+            total_personal_data_columns,
+        "totalContextDependentColumns":
+            total_context_dependent_columns,
+        "totalRegulatedIdentifierColumns":
+            total_regulated_identifier_columns,
     }

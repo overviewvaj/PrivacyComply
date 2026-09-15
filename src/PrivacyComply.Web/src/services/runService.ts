@@ -4,6 +4,10 @@ import type {
     CompleteAnalysisRunRequest,
     CreateAnalysisRunRequest,
     CreateAnalysisRunResult,
+    DiscoveredFieldDto,
+    EvidenceDto,
+    FindingDto,
+    RuleEvaluationDto,
 } from '../types/CreateAnalysisRun'
 
 import {
@@ -183,5 +187,84 @@ export function cancelAnalysisRun(
         )}/cancel`,
         {},
         'Failed to cancel analysis run.',
+    )
+}
+export function getDiscoveredFields(
+    organisationSlug: string,
+    analysisRunId: string,
+): Promise<DiscoveredFieldDto[]> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return getJson<DiscoveredFieldDto[]>(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/fields`,
+        'Failed to load discovered fields.',
+    )
+}
+
+export function getFindings(
+    organisationSlug: string,
+    analysisRunId: string,
+): Promise<FindingDto[]> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return getJson<FindingDto[]>(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/findings`,
+        'Failed to load findings.',
+    )
+}
+
+export function getEvidence(
+    organisationSlug: string,
+    analysisRunId: string,
+): Promise<EvidenceDto[]> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return getJson<EvidenceDto[]>(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/evidence`,
+        'Failed to load evidence.',
+    )
+}
+
+export function getRuleEvaluations(
+    organisationSlug: string,
+    analysisRunId: string,
+): Promise<RuleEvaluationDto[]> {
+    const runApiBasePath =
+        getRunApiBasePath(organisationSlug)
+
+    const normalizedAnalysisRunId =
+        normalizeAnalysisRunId(
+            analysisRunId,
+        )
+
+    return getJson<RuleEvaluationDto[]>(
+        `${runApiBasePath}/${encodeURIComponent(
+            normalizedAnalysisRunId,
+        )}/evaluations`,
+        'Failed to load rule evaluations.',
     )
 }

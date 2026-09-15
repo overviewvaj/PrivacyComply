@@ -10,6 +10,9 @@ export interface EdgeColumnProfile {
     classificationCode: string | null
     classificationMethod: string
     matchPercentage: number | null
+    privacyCategory?: string | null
+    isPersonalData?: boolean
+    isRegulatedIdentifier?: boolean
 }
 
 export interface EdgeClassificationSummary {
@@ -17,6 +20,9 @@ export interface EdgeClassificationSummary {
     classifiedColumns: number
     unclassifiedColumns: number
     classificationCoveragePercentage: number
+    totalPersonalDataColumns?: number
+    totalContextDependentColumns?: number
+    totalRegulatedIdentifierColumns?: number
 }
 
 export interface EdgeFindingSummary {
@@ -32,6 +38,19 @@ export interface EdgeFinding {
     severity: string
 
     [key: string]: unknown
+}
+
+export interface EdgeEvidenceItem {
+    evidenceReference: string
+    evidenceType: string
+    sourceReference: string
+    fieldName?: string | null
+    classificationCode?: string | null
+    ruleVersion: string
+    agentVersion: string
+    evidenceHash: string
+    hashAlgorithm: string
+    metadataJson: string
 }
 
 export interface EdgeInspectionResult {
@@ -56,4 +75,5 @@ export interface EdgeInspectionResult {
     EdgeFindingSummary
 
     findings: EdgeFinding[]
+    evidence?: EdgeEvidenceItem[]
 }

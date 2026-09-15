@@ -19,6 +19,10 @@ from app.finding_builder import (
     build_findings,
 )
 
+from app.evidence_generator import (
+    generate_inspection_evidence,
+)
+
 
 SUPPORTED_EXTENSIONS = {
     ".xlsx",
@@ -587,6 +591,15 @@ def build_result(
         findings,
     )
 
+    evidence = generate_inspection_evidence(
+        file_name=file_name,
+        sheet_name=sheet_name,
+        row_count=len(data_rows),
+        column_count=len(columns),
+        column_profiles=column_profiles,
+        classification_summary=classification_summary,
+    )
+
     return {
         "fileName": file_name,
         "fileExtension": file_extension,
@@ -604,6 +617,7 @@ def build_result(
         "findingSummary":
             finding_summary,
         "findings": findings,
+        "evidence": evidence,
     }
 
 
@@ -639,4 +653,5 @@ def build_empty_result(
             "errorCount": 0,
         },
         "findings": [],
+        "evidence": [],
     }

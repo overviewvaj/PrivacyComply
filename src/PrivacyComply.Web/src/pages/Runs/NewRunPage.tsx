@@ -280,31 +280,114 @@ function NewRunPage() {
                 'COMPLETING_RUN',
             )
 
+            const discoveredFieldsPayload =
+                (localInspectionResult.columnProfiles ?? []).map(
+                    (columnProfile, index) => ({
+                        sourceObjectName:
+                            localInspectionResult.sheetName ?? null,
+                        fieldName: columnProfile.columnName,
+                        ordinalPosition: index + 1,
+                        inferredDataType:
+                            (columnProfile as any).inferredDataType ??
+                            'TEXT',
+                        classificationStatus:
+                            columnProfile.classificationStatus,
+                        classificationCode:
+                            columnProfile.classificationCode ?? null,
+                        classificationMethod:
+                            columnProfile.classificationMethod,
+                        matchPercentage:
+                            columnProfile.matchPercentage ?? null,
+                        privacyCategory:
+                            columnProfile.privacyCategory ??
+                            'NOT_PERSONAL',
+                        isPersonalData:
+                            columnProfile.isPersonalData ?? false,
+                        isRegulatedIdentifier:
+                            columnProfile.isRegulatedIdentifier ??
+                            false,
+                        nonEmptyCount:
+                            (columnProfile as any).nonEmptyCount ?? 0,
+                        emptyCount:
+                            (columnProfile as any).emptyCount ?? 0,
+                    }),
+                )
+
             await completeAnalysisRun(
                 organisationSlug,
                 createdAnalysisRunId,
                 {
                     sourceObjectName:
-                        localInspectionResult
-                            .sheetName,
+                        localInspectionResult.sheetName,
 
                     totalRecordsAnalysed:
-                        localInspectionResult
-                            .rowCount,
+                        localInspectionResult.rowCount,
 
                     totalFieldsDiscovered:
-                        localInspectionResult
-                            .columnCount,
+                        localInspectionResult.columnCount,
+
+                    totalPersonalDataFields:
+                        localInspectionResult.classificationSummary
+                            .totalPersonalDataColumns ?? 0,
 
                     totalUnclassifiedFields:
-                        localInspectionResult
-                            .classificationSummary
+                        localInspectionResult.classificationSummary
                             .unclassifiedColumns,
 
                     classificationCoveragePercentage:
-                        localInspectionResult
-                            .classificationSummary
+                        localInspectionResult.classificationSummary
                             .classificationCoveragePercentage,
+
+                    discoveredFields:
+                        discoveredFieldsPayload,
+                    findings:
+                        (localInspectionResult.findings ?? []).map(
+                            (finding) => ({
+                                findingCode:
+                                    finding.findingCode,
+                                findingCategory:
+                                    (finding as any).findingCategory ??
+                                    finding.category ??
+                                    'DATA_QUALITY',
+                                severity:
+                                    finding.severity,
+                                fieldName:
+                                    (finding as any).columnName ?? null,
+                                ruleReference:
+                                    null,
+                                message:
+                                    (finding as any).message ?? null,
+                                safeMetadataJson:
+                                    null,
+                            }),
+                        ),
+                    evidence:
+                        (localInspectionResult.evidence ?? []).map(
+                            (ev) => ({
+                                evidenceReference:
+                                    ev.evidenceReference,
+                                evidenceTypeCode:
+                                    ev.evidenceType,
+                                sourceTypeCode:
+                                    'EDGE_AGENT',
+                                sourceReference:
+                                    ev.sourceReference,
+                                fieldName:
+                                    ev.fieldName ?? null,
+                                classificationCode:
+                                    ev.classificationCode ?? null,
+                                ruleVersion:
+                                    ev.ruleVersion,
+                                agentVersion:
+                                    ev.agentVersion,
+                                evidenceHash:
+                                    ev.evidenceHash,
+                                hashAlgorithmCode:
+                                    ev.hashAlgorithm,
+                                metadataJson:
+                                    ev.metadataJson,
+                            }),
+                        ),
                 },
             )
 

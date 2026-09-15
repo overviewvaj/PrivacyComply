@@ -491,6 +491,10 @@ builder.Services.AddScoped<
     AnalysisRunQueries>();
 
 builder.Services.AddScoped<
+    PrivacyComply.Application.Features.Rules.IDpdpRulesEngine,
+    PrivacyComply.Infrastructure.Rules.DpdpRulesEngine>();
+
+builder.Services.AddScoped<
     IAnalysisRunCommands,
     AnalysisRunCommands>();
 

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
 using PrivacyComply.Api.Filters;
 using PrivacyComply.Application.Abstractions.Identity;
@@ -136,7 +136,93 @@ public static class RunEndpoints
                     result);
             });
 
-        group.MapPost(
+                group.MapGet(
+            "/{analysisRunId:guid}/fields",
+            async (
+                Guid analysisRunId,
+                ITenantContext tenantContext,
+                IAnalysisRunQueries analysisRunQueries,
+                CancellationToken cancellationToken) =>
+            {
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var fields = await analysisRunQueries.GetDiscoveredFieldsAsync(
+                    tenantContext.OrganisationId,
+                    analysisRunId,
+                    cancellationToken);
+
+                return Results.Ok(fields);
+            });
+
+        group.MapGet(
+            "/{analysisRunId:guid}/findings",
+            async (
+                Guid analysisRunId,
+                ITenantContext tenantContext,
+                IAnalysisRunQueries analysisRunQueries,
+                CancellationToken cancellationToken) =>
+            {
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var findings = await analysisRunQueries.GetFindingsAsync(
+                    tenantContext.OrganisationId,
+                    analysisRunId,
+                    cancellationToken);
+
+                return Results.Ok(findings);
+            });
+
+        group.MapGet(
+            "/{analysisRunId:guid}/evidence",
+            async (
+                Guid analysisRunId,
+                ITenantContext tenantContext,
+                IAnalysisRunQueries analysisRunQueries,
+                CancellationToken cancellationToken) =>
+            {
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var evidence = await analysisRunQueries.GetEvidenceAsync(
+                    tenantContext.OrganisationId,
+                    analysisRunId,
+                    cancellationToken);
+
+                return Results.Ok(evidence);
+            });
+
+        group.MapGet(
+            "/{analysisRunId:guid}/evaluations",
+            async (
+                Guid analysisRunId,
+                ITenantContext tenantContext,
+                IAnalysisRunQueries analysisRunQueries,
+                CancellationToken cancellationToken) =>
+            {
+                if (!tenantContext.HasTenant)
+                {
+                    return Results.Forbid();
+                }
+
+                var evaluations = await analysisRunQueries.GetRuleEvaluationsAsync(
+                    tenantContext.OrganisationId,
+                    analysisRunId,
+                    cancellationToken);
+
+                return Results.Ok(evaluations);
+            });
+
+
+
+group.MapPost(
             "/{analysisRunId:guid}/start",
             async (
                 Guid analysisRunId,
@@ -269,6 +355,7 @@ public static class RunEndpoints
                 if (
                     request.TotalRecordsAnalysed < 0 ||
                     request.TotalFieldsDiscovered < 0 ||
+                    request.TotalPersonalDataFields < 0 ||
                     request.TotalUnclassifiedFields < 0
                 )
                 {
@@ -317,6 +404,49 @@ public static class RunEndpoints
 
                 try
                 {
+                    var discoveredFieldCommands = request.DiscoveredFields?
+                        .Select(f => new DiscoveredFieldCommand(
+                            f.SourceObjectName,
+                            f.FieldName,
+                            f.OrdinalPosition,
+                            f.InferredDataType,
+                            f.ClassificationStatus,
+                            f.ClassificationCode,
+                            f.ClassificationMethod,
+                            f.MatchPercentage,
+                            f.PrivacyCategory,
+                            f.IsPersonalData,
+                            f.IsRegulatedIdentifier,
+                            f.NonEmptyCount,
+                            f.EmptyCount))
+                        .ToList();
+
+                    var findingCommands = request.Findings?
+                        .Select(f => new FindingCommand(
+                            f.FindingCode,
+                            f.FindingCategory,
+                            f.Severity,
+                            f.FieldName,
+                            f.RuleReference,
+                            f.Message,
+                            f.SafeMetadataJson))
+                        .ToList();
+
+                    var evidenceCommands = request.Evidence?
+                        .Select(e => new EvidenceRecordCommand(
+                            e.EvidenceReference,
+                            e.EvidenceTypeCode,
+                            e.SourceTypeCode,
+                            e.SourceReference,
+                            e.FieldName,
+                            e.ClassificationCode,
+                            e.RuleVersion,
+                            e.AgentVersion,
+                            e.EvidenceHash,
+                            e.HashAlgorithmCode,
+                            e.MetadataJson))
+                        .ToList();
+
                     await analysisRunCommands.CompleteAsync(
                         new CompleteAnalysisRunCommand(
                             tenantContext.OrganisationId,
@@ -325,8 +455,12 @@ public static class RunEndpoints
                             request.SourceObjectName,
                             request.TotalRecordsAnalysed,
                             request.TotalFieldsDiscovered,
+                            request.TotalPersonalDataFields,
                             request.TotalUnclassifiedFields,
-                            request.ClassificationCoveragePercentage),
+                            request.ClassificationCoveragePercentage,
+                            discoveredFieldCommands,
+                            findingCommands,
+                            evidenceCommands),
                         cancellationToken);
 
                     return Results.NoContent();

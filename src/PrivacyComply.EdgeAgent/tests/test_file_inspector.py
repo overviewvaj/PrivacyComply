@@ -459,6 +459,7 @@ def test_build_empty_result() -> None:
             "errorCount": 0,
         },
         "findings": [],
+        "evidence": [],
     }
 
 

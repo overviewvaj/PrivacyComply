@@ -242,4 +242,7 @@ def test_empty_classification_summary() -> None:
         "classifiedColumns": 0,
         "unclassifiedColumns": 0,
         "classificationCoveragePercentage": 0.0,
+        "totalPersonalDataColumns": 0,
+        "totalContextDependentColumns": 0,
+        "totalRegulatedIdentifierColumns": 0,
     }

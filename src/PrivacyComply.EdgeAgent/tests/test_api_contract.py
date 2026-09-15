@@ -73,6 +73,7 @@ def test_v1_success_contract_top_level_fields() -> None:
         "classificationSummary",
         "findingSummary",
         "findings",
+        "evidence",
     }
 
     assert (
@@ -112,6 +113,9 @@ def test_v1_classification_summary_contract() -> None:
         "classifiedColumns",
         "unclassifiedColumns",
         "classificationCoveragePercentage",
+        "totalPersonalDataColumns",
+        "totalContextDependentColumns",
+        "totalRegulatedIdentifierColumns",
     }
 
     assert summary["totalColumns"] == 1
